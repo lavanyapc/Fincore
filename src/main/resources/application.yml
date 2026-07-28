@@ -1,0 +1,11 @@
+spring:
+     datasource:
+       url: jdbc:postgresql://localhost:5432/smartbank
+       username: smartbank_user
+       password: smartbank_pass
+     jpa:
+       hibernate:
+         ddl-auto: validate
+       show-sql: true
+     flyway:
+       enabled: true

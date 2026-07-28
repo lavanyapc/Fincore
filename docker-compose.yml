@@ -1,0 +1,16 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgres:16
+    container_name: smartbank-postgres
+    environment:
+      POSTGRES_DB: smartbank
+      POSTGRES_USER: smartbank_user
+      POSTGRES_PASSWORD: smartbank_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - smartbank-pgdata:/var/lib/postgresql/data
+
+volumes:
+  smartbank-pgdata:
