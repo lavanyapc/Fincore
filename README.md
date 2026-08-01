@@ -1,4 +1,4 @@
-# SmartBank
+# FinCore
 
 A digital banking system built with Spring Boot, focused on implementing secure banking services and core financial operations.
 
