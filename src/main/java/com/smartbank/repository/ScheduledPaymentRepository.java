@@ -7,7 +7,7 @@ import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.smartbank.smartbank.entity.ScheduledPayment;
+import com.smartbank.entity.ScheduledPayment;
 
 public interface ScheduledPaymentRepository extends JpaRepository<ScheduledPayment, UUID> {
     List<ScheduledPayment> findByStatusAndNextRunAtBefore(String status, OffsetDateTime time);

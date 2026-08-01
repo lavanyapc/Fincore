@@ -1,4 +1,4 @@
-package com.smartbank.smartbank.entity;
+package com.smartbank.entity;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;

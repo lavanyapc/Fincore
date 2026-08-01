@@ -1,4 +1,4 @@
-package com.smartbank.smartbank;
+package com.smartbank;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

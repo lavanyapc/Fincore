@@ -6,7 +6,7 @@ import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.smartbank.smartbank.entity.Transaction;
+import com.smartbank.entity.Transaction;
 
 public interface TransactionRepository extends JpaRepository<Transaction, UUID> {
     Optional<Transaction> findByIdempotencyKey(String idempotencyKey);
