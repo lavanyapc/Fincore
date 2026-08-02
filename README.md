@@ -23,6 +23,7 @@ A digital banking system built with Spring Boot, focused on implementing secure 
 - JPA repositories
 - DTO-based API requests and responses
 - Account number generation
+- Money transfers
 
 ## Project Structure
 
@@ -43,7 +44,6 @@ Currently in development.
 
 Planned features include:
 
-- Money transfers
 - Transaction history
 - Beneficiary management
 - Scheduled payments
