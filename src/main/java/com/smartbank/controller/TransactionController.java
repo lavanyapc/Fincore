@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.smartbank.dto.DepositRequest;
 import com.smartbank.dto.TransactionResponse;
+import com.smartbank.dto.TransferRequest;
 import com.smartbank.dto.WithdrawRequest;
 import com.smartbank.service.TransactionService;
 
@@ -31,5 +32,10 @@ public class TransactionController {
     @PostMapping("/withdraw")
     public ResponseEntity<TransactionResponse> withdraw(@Valid @RequestBody WithdrawRequest request) {
         return ResponseEntity.ok(transactionService.withdraw(request));
+    }
+
+    @PostMapping("/transfer")
+    public ResponseEntity<TransactionResponse> transfer(@Valid @RequestBody TransferRequest request) {
+        return ResponseEntity.ok(transactionService.transfer(request));
     }
 }
