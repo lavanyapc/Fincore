@@ -43,6 +43,7 @@ public class TransactionService {
                 .orElseThrow(() -> new IllegalStateException("Authenticated user not found in database"));
     }
 
+    // Ownership check only — no lock. Used for read-only/validation lookups.
     private Account getOwnedAccount(UUID accountId) {
         User currentUser = getCurrentUser();
         Account account = accountRepository.findById(accountId)
@@ -54,9 +55,21 @@ public class TransactionService {
         return account;
     }
 
+    // Ownership check + row lock. Used right before reading a balance we're about to modify.
+    private Account getOwnedAccountForUpdate(UUID accountId) {
+        User currentUser = getCurrentUser();
+        Account account = accountRepository.findByIdForUpdate(accountId)
+                .orElseThrow(() -> new IllegalArgumentException("Account not found"));
+
+        if (!account.getUser().getId().equals(currentUser.getId())) {
+            throw new IllegalArgumentException("Account does not belong to the current user");
+        }
+        return account;
+    }
+
     @Transactional
     public TransactionResponse deposit(DepositRequest request) {
-        Account account = getOwnedAccount(request.getAccountId());
+        Account account = getOwnedAccountForUpdate(request.getAccountId());
 
         Transaction transaction = new Transaction();
         transaction.setIdempotencyKey(UUID.randomUUID().toString());
@@ -85,7 +98,7 @@ public class TransactionService {
 
     @Transactional
     public TransactionResponse withdraw(WithdrawRequest request) {
-        Account account = getOwnedAccount(request.getAccountId());
+        Account account = getOwnedAccountForUpdate(request.getAccountId());
 
         if (account.getBalance().compareTo(request.getAmount()) < 0) {
             throw new InsufficientFundsException("Insufficient funds for this withdrawal");
@@ -118,14 +131,35 @@ public class TransactionService {
 
     @Transactional
     public TransactionResponse transfer(TransferRequest request) {
-        Account sourceAccount = getOwnedAccount(request.getSourceAccountId());
-
-        Account destinationAccount = accountRepository.findByAccountNumber(request.getDestinationAccountNumber())
+        // First, resolve both accounts WITHOUT locking, just to find their IDs and check ownership/existence.
+        Account sourceLookup = getOwnedAccount(request.getSourceAccountId());
+        Account destinationLookup = accountRepository.findByAccountNumber(request.getDestinationAccountNumber())
                 .orElseThrow(() -> new IllegalArgumentException("Destination account not found"));
 
-        if (sourceAccount.getId().equals(destinationAccount.getId())) {
+        if (sourceLookup.getId().equals(destinationLookup.getId())) {
             throw new IllegalArgumentException("Cannot transfer to the same account");
         }
+
+        // Lock ordering: always lock the account with the "smaller" ID first.
+        // This guarantees that no matter which account is source/destination,
+        // two concurrent transfers between the same pair of accounts always
+        // acquire locks in the same order, preventing deadlocks.
+        UUID firstId, secondId;
+        if (sourceLookup.getId().compareTo(destinationLookup.getId()) < 0) {
+            firstId = sourceLookup.getId();
+            secondId = destinationLookup.getId();
+        } else {
+            firstId = destinationLookup.getId();
+            secondId = sourceLookup.getId();
+        }
+
+        Account firstLocked = accountRepository.findByIdForUpdate(firstId)
+                .orElseThrow(() -> new IllegalArgumentException("Account not found"));
+        Account secondLocked = accountRepository.findByIdForUpdate(secondId)
+                .orElseThrow(() -> new IllegalArgumentException("Account not found"));
+
+        Account sourceAccount = firstLocked.getId().equals(sourceLookup.getId()) ? firstLocked : secondLocked;
+        Account destinationAccount = firstLocked.getId().equals(destinationLookup.getId()) ? firstLocked : secondLocked;
 
         if (!"ACTIVE".equals(sourceAccount.getStatus())) {
             throw new IllegalArgumentException("Source account is not active");

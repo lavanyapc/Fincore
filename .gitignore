@@ -41,3 +41,6 @@ build/
 
 ### OS files ###
 .DS_Store
+### Docker ###
+
+docker-compose.override.yml
