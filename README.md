@@ -24,6 +24,7 @@ A digital banking system built with Spring Boot, focused on implementing secure 
 - DTO-based API requests and responses
 - Account number generation
 - Money transfers with Concurrency & Locking
+- Idempotency check
 
 ## Project Structure
 
