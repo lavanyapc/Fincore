@@ -43,7 +43,6 @@ public class TransactionService {
                 .orElseThrow(() -> new IllegalStateException("Authenticated user not found in database"));
     }
 
-    // Ownership check only — no lock. Used for read-only/validation lookups.
     private Account getOwnedAccount(UUID accountId) {
         User currentUser = getCurrentUser();
         Account account = accountRepository.findById(accountId)
@@ -55,7 +54,6 @@ public class TransactionService {
         return account;
     }
 
-    // Ownership check + row lock. Used right before reading a balance we're about to modify.
     private Account getOwnedAccountForUpdate(UUID accountId) {
         User currentUser = getCurrentUser();
         Account account = accountRepository.findByIdForUpdate(accountId)
@@ -130,8 +128,18 @@ public class TransactionService {
     }
 
     @Transactional
-    public TransactionResponse transfer(TransferRequest request) {
-        // First, resolve both accounts WITHOUT locking, just to find their IDs and check ownership/existence.
+    public TransactionResponse transfer(TransferRequest request, String idempotencyKey) {
+
+        // Step 1: Check if we've already processed this exact request before.
+        var existing = transactionRepository.findByIdempotencyKey(idempotencyKey);
+        if (existing.isPresent()) {
+            Transaction previous = existing.get();
+            Account sourceAccount = previous.getSourceAccount();
+            return new TransactionResponse(previous.getId(), previous.getType(), previous.getAmount(),
+                    sourceAccount.getBalance(), previous.getStatus(), previous.getCompletedAt());
+        }
+
+        // Step 2: Not a duplicate — proceed with the normal transfer logic.
         Account sourceLookup = getOwnedAccount(request.getSourceAccountId());
         Account destinationLookup = accountRepository.findByAccountNumber(request.getDestinationAccountNumber())
                 .orElseThrow(() -> new IllegalArgumentException("Destination account not found"));
@@ -140,10 +148,6 @@ public class TransactionService {
             throw new IllegalArgumentException("Cannot transfer to the same account");
         }
 
-        // Lock ordering: always lock the account with the "smaller" ID first.
-        // This guarantees that no matter which account is source/destination,
-        // two concurrent transfers between the same pair of accounts always
-        // acquire locks in the same order, preventing deadlocks.
         UUID firstId, secondId;
         if (sourceLookup.getId().compareTo(destinationLookup.getId()) < 0) {
             firstId = sourceLookup.getId();
@@ -173,7 +177,7 @@ public class TransactionService {
         }
 
         Transaction transaction = new Transaction();
-        transaction.setIdempotencyKey(UUID.randomUUID().toString());
+        transaction.setIdempotencyKey(idempotencyKey);
         transaction.setType("TRANSFER");
         transaction.setSourceAccount(sourceAccount);
         transaction.setDestinationAccount(destinationAccount);
