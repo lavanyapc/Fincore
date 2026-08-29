@@ -1,4 +1,3 @@
-// BeneficiaryRepository.java
 package com.smartbank.repository;
 
 import java.util.List;
