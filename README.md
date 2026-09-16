@@ -26,6 +26,7 @@ A digital banking system built with Spring Boot, focused on implementing secure 
 - Money transfers with Concurrency & Locking
 - Idempotency check
 - Transaction history
+- Beneficiary management (add, list, delete)
 
 ## Project Structure
 
@@ -46,7 +47,6 @@ Currently in development.
 
 Planned features include:
 
-- Beneficiary management
 - Scheduled payments
 - OTP verification
 - Audit logging
