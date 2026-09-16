@@ -27,6 +27,7 @@ A digital banking system built with Spring Boot, focused on implementing secure 
 - Idempotency check
 - Transaction history
 - Beneficiary management (add, list, delete)
+- Scheduled payments (background job with @Scheduled)
 
 ## Project Structure
 
@@ -46,8 +47,6 @@ src/
 Currently in development.
 
 Planned features include:
-
-- Scheduled payments
 - OTP verification
 - Audit logging
 - Admin operations
