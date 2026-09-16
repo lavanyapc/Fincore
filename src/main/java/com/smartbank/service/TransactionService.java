@@ -24,17 +24,22 @@ import com.smartbank.repository.UserRepository;
 @Service
 public class TransactionService {
 
+    private static final BigDecimal OTP_THRESHOLD = new BigDecimal("1000");
+
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
     private final TransactionRepository transactionRepository;
     private final LedgerEntryRepository ledgerEntryRepository;
+    private final OtpService otpService;
 
     public TransactionService(AccountRepository accountRepository, UserRepository userRepository,
-                               TransactionRepository transactionRepository, LedgerEntryRepository ledgerEntryRepository) {
+                               TransactionRepository transactionRepository, LedgerEntryRepository ledgerEntryRepository,
+                               OtpService otpService) {
         this.accountRepository = accountRepository;
         this.userRepository = userRepository;
         this.transactionRepository = transactionRepository;
         this.ledgerEntryRepository = ledgerEntryRepository;
+        this.otpService = otpService;
     }
 
     private User getCurrentUser() {
@@ -140,6 +145,14 @@ public class TransactionService {
         }
 
         // Step 2: Not a duplicate — proceed with the normal transfer logic.
+
+        // OTP check for large transfers.
+        if (request.getAmount().compareTo(OTP_THRESHOLD) >= 0) {
+            if (request.getOtpCode() == null || !otpService.verifyOtp(request.getOtpCode(), "TRANSFER")) {
+                throw new IllegalArgumentException("Valid OTP required for transfers of " + OTP_THRESHOLD + " or more");
+            }
+        }
+
         Account sourceLookup = getOwnedAccount(request.getSourceAccountId());
         Account destinationLookup = accountRepository.findByAccountNumber(request.getDestinationAccountNumber())
                 .orElseThrow(() -> new IllegalArgumentException("Destination account not found"));

@@ -19,10 +19,14 @@ public class TransferRequest {
     @DecimalMin(value = "0.01", message = "Amount must be greater than zero")
     private BigDecimal amount;
 
+    private String otpCode; // required only if amount exceeds the OTP threshold
+
     public UUID getSourceAccountId() { return sourceAccountId; }
     public void setSourceAccountId(UUID sourceAccountId) { this.sourceAccountId = sourceAccountId; }
     public String getDestinationAccountNumber() { return destinationAccountNumber; }
     public void setDestinationAccountNumber(String destinationAccountNumber) { this.destinationAccountNumber = destinationAccountNumber; }
     public BigDecimal getAmount() { return amount; }
     public void setAmount(BigDecimal amount) { this.amount = amount; }
+    public String getOtpCode() { return otpCode; }
+    public void setOtpCode(String otpCode) { this.otpCode = otpCode; }
 }
